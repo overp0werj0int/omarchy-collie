@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "overp0werj0int.collie",
+  "name": "Collie Control",
+  "version": "1.0.0",
+  "author": "overp0werj0int",
+  "license": "MIT",
+  "description": "Control Collie, the mobile Herdr frontend, from the Omarchy bar.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "ColliePanel.qml"
+  },
+  "barWidget": {
+    "displayName": "Collie Control",
+    "description": "Service status, tailnet URL, start/stop/restart and device pairing.",
+    "category": "AI",
+    "defaultSection": "right",
+    "allowMultiple": false,
+    "defaults": {
+      "refreshIntervalSec": 10,
+      "collieBinary": "collie",
+      "bridgePort": 8787
+    },
+    "schema": [
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Refresh interval (seconds)",
+        "min": 5,
+        "max": 120,
+        "defaultValue": 10
+      },
+      {
+        "key": "collieBinary",
+        "type": "string",
+        "label": "Collie executable",
+        "defaultValue": "collie"
+      },
+      {
+        "key": "bridgePort",
+        "type": "integer",
+        "label": "Local bridge port",
+        "min": 1,
+        "max": 65535,
+        "defaultValue": 8787
+      }
+    ]
+  }
+}

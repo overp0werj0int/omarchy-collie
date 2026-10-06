@@ -1,0 +1,14 @@
+{
+  "installed": true,
+  "healthy": true,
+  "serviceState": "active",
+  "version": "demo",
+  "url": "https://collie-demo.example.ts.net",
+  "tailnetPublished": true,
+  "tailscaleInstalled": true,
+  "tailscaleReady": true,
+  "muxes": ["herdr", "tmux"],
+  "qrAvailable": true,
+  "missingTools": [],
+  "error": ""
+}

@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 .env
 *.bak
+
+# Local authoring skills are not distributed with the desktop plugin.
+.claude/

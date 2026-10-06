@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "overp0werj0int.collie",
-  "name": "Collie Control",
-  "version": "1.0.0",
+  "name": "Collie Lab",
+  "version": "1.1.0",
   "author": "overp0werj0int",
   "license": "MIT",
-  "description": "Control Collie, the mobile Herdr frontend, from the Omarchy bar.",
+  "description": "Install and manage the Collie backend, verify requirements, and connect your phone with QR codes.",
   "kinds": [
     "bar-widget"
   ],
@@ -13,8 +13,8 @@
     "barWidget": "ColliePanel.qml"
   },
   "barWidget": {
-    "displayName": "Collie Control",
-    "description": "Service status, tailnet URL, start/stop/restart and device pairing.",
+    "displayName": "Collie Lab",
+    "description": "One-click backend setup, readiness checks, service controls and QR phone pairing.",
     "category": "AI",
     "defaultSection": "right",
     "allowMultiple": false,

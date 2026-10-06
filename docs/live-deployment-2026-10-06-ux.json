@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-06T15:24:38",
+  "change": "Guided one-button setup and redesigned panel",
+  "backup": "/home/p0werj0int/.local/state/omarchy/collie-backups/deploy-20261006-152315-ux",
+  "runtimeSha256": {
+    "ColliePanel.qml": "e1c7c29236f49b43d882a5bcaaea0dee553554845d7aad53862c22e8449a000a",
+    "IpcOwner.js": "28dcd6255f17dc14129c93b3eaf02fb96d8b6af9ce584e16d18dfd8a9690fc38",
+    "manifest.json": "2f4231d9834c19ca3f8e6e8442d63ec70afa368b90c477833e10ce764f7063b9",
+    "scripts/control.py": "5ecee288decaaa466fca4698b4e8a1f4b342b0af9c40acb838bade5a50a75e50",
+    "scripts/release.json": "f164258e92ad79cb695e03319abe156f882777b9ecdbebd7e555a7a113168c8a",
+    "scripts/tailscale-setup.sh": "4d0a9e0289184b4da963af684f8097ca14e45469eef18a486918e9928567e29b"
+  },
+  "validation": "passed",
+  "shellRestarted": true,
+  "live": {
+    "healthy": true,
+    "tailnetPublished": true,
+    "serviceState": "active",
+    "nextStep": "",
+    "error": false
+  },
+  "updates": [
+    {
+      "date": "2026-10-06T15:42:26",
+      "change": "Single auto-pairing QR; background issues no longer shown as errors",
+      "backup": "/home/p0werj0int/.local/state/omarchy/collie-backups/deploy-20261006-154210-singleqr",
+      "runtimeSha256": {
+        "ColliePanel.qml": "b0d9af7649e88f72e1d5411ceff7e102c45140aaa1011c41490d332e31dc4641",
+        "IpcOwner.js": "28dcd6255f17dc14129c93b3eaf02fb96d8b6af9ce584e16d18dfd8a9690fc38",
+        "manifest.json": "2f4231d9834c19ca3f8e6e8442d63ec70afa368b90c477833e10ce764f7063b9",
+        "scripts/control.py": "5ecee288decaaa466fca4698b4e8a1f4b342b0af9c40acb838bade5a50a75e50",
+        "scripts/release.json": "f164258e92ad79cb695e03319abe156f882777b9ecdbebd7e555a7a113168c8a",
+        "scripts/tailscale-setup.sh": "4d0a9e0289184b4da963af684f8097ca14e45469eef18a486918e9928567e29b"
+      },
+      "validation": "passed",
+      "shellRestarted": true,
+      "powerbarLoaded": true,
+      "fallbacks": 0
+    },
+    {
+      "deployedAt": "2026-10-06T18:31:48+03:00",
+      "change": "Connect modes: Watch only, Full control (pairing link with code and optional device name, countdown, New code), Open on this computer (web app, pairs once)",
+      "backup": "~/.local/state/omarchy/collie-backups/deploy-20261006-183148-modes",
+      "files": {
+        "ColliePanel.qml": "62f1496a55cbacf605fb964313a9c547f2d6b85863cb32eb0db3d0b712053107",
+        "scripts/control.py": "24b67a27cab5fde27f0fff34b4be5a98fcb3f2db2f0156ce6c60e7221ab217b2",
+        "README.md": "fd9c0dcf6adf9915ac03f32a3e5c1cee87d292f6bcc3b650539a036b3cbde508",
+        "preview.png": "b6d49184c55f085052c07e1c059a8b7abf46b041a364c3fee686f9ab61af2102"
+      },
+      "verification": {
+        "validate": "passed",
+        "shellLog": "2026-10-06T18:31:58",
+        "fallbacks": 0,
+        "ipcTargets": [
+          "powerbar",
+          "overp0werj0int.collie"
+        ],
+        "collieStatus": {
+          "busy": false,
+          "error": false,
+          "message": ""
+        }
+      }
+    }
+  ]
+}

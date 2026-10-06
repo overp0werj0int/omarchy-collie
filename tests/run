@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+collie_test_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+cd "$collie_test_root"
+python3 -m unittest discover -s tests -p 'test_*.py' -v
+bash -n scripts/tailscale-setup.sh tests/preview.sh demo/run

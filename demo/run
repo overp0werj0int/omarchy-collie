@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Fictional preview runs only in an omabox desktop; no real service or settings changes.
+set -euo pipefail
+collie_demo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+cd "$collie_demo_root"
+exec omabox run --net isolated -- bash tests/preview.sh "${1:-ready}"

@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-06T14:48:48",
+  "backup": "/home/p0werj0int/.local/state/omarchy/collie-backups/deploy-20261006-144759-62c2daed",
+  "runtimeSha256": {
+    "ColliePanel.qml": "dbe0d3e6921da34a6c2ed5178e33688da1d715ddeaa079b093b852f3562713d7",
+    "IpcOwner.js": "28dcd6255f17dc14129c93b3eaf02fb96d8b6af9ce584e16d18dfd8a9690fc38",
+    "manifest.json": "2f4231d9834c19ca3f8e6e8442d63ec70afa368b90c477833e10ce764f7063b9",
+    "scripts/control.py": "d6a4b556d824cf9d4495f1e33e23c16c44176234a0c9dfc61eb155d87f44ffad",
+    "scripts/release.json": "f164258e92ad79cb695e03319abe156f882777b9ecdbebd7e555a7a113168c8a",
+    "scripts/tailscale-setup.sh": "4d0a9e0289184b4da963af684f8097ca14e45469eef18a486918e9928567e29b"
+  },
+  "validation": "passed",
+  "live": {
+    "enabled": true,
+    "busy": false,
+    "error": false,
+    "healthy": true,
+    "tailnetPublished": true,
+    "serviceState": "active"
+  }
+}

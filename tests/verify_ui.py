@@ -93,6 +93,14 @@ for scenario in ('missing','no-qr','offline','error','ready'):
                 until(lambda s: s['pairingQr']) # and Full control makes a fresh one
                 status=json.loads(call('overp0werj0int.collie','status'))
                 assert 'DEMO-ONLY' not in json.dumps(status) and status['mode']=='control' # IPC never exposes the code
+                # The device that uses the code shows up as paired, and the spent code goes.
+                assert inspect()['devices']==1
+                call('labtest','enrol','Test iPad')
+                state=until(lambda s: s['pairedLabel']=='Test iPad')
+                assert state['codeCleared'] and state['devices']==2, state
+                call('labtest','capture',str(out/'paired-demo.png'))
+                call('labtest','revoke','Test iPad')
+                until(lambda s: s['devices']==1 and not s['busy'])
                 call('labtest','goBack'); assert inspect()['mode']=='' and inspect()['opened']
                 call('labtest','mode','watch'); time.sleep(.6)
                 decoded=decode('watch-demo.png')

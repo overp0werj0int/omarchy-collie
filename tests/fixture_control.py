@@ -26,7 +26,8 @@ if not path.exists() and scenario == "ready":
     state = json.loads((Path(os.environ["COLLIE_LAB_HELPER"]).parents[1] / "demo/fixtures/ready.json").read_text())
 action = sys.argv[1]
 name = sys.argv[sys.argv.index("--name") + 1] if "--name" in sys.argv else ""
-state.setdefault("pairedDevices", 1)
+state.setdefault("devices", [{"label": "Demo phone", "created": time.time() - 86400, "lastSeen": time.time() - 120, "thisComputer": False}])
+state["pairedDevices"] = len(state["devices"])
 answer = {"ok": True, "message": "Demo action complete."}
 if action == "status":
     answer = state
@@ -61,6 +62,13 @@ elif action == "pair":
                   qr=c.qr_image(url), message="Demo pairing code. Scan to open Settings with the code filled in.")
 elif action == "pair-qr":
     answer = {"ok": True, "qr": c.qr_image(c.pair_url(state["url"], os.environ["COLLIE_LAB_PAIR_CODE"], c.device_name(name)))}
+elif action == "revoke":
+    state["devices"] = [d for d in state["devices"] if d["label"] != name]
+    state["pairedDevices"] = len(state["devices"])
+    answer["message"] = f"Revoked {name}."
+elif action == "enrol":  # test hook: a device uses the code on screen
+    state["devices"].append({"label": name, "created": time.time(), "lastSeen": time.time(), "thisComputer": False})
+    state["pairedDevices"] = len(state["devices"])
 elif action == "open":
     answer["message"] = "Opened Collie on this computer (demo: nothing was launched)."
 elif action == "stop":

@@ -15,6 +15,8 @@ ShellRoot {
     function deviceName(value: string): void { lab.deviceName = value }
     function key(text: string): void { lab.shortcut(text) }
     function goBack(): void { lab.goBack() }
+    function enrol(label: string): void { lab.act("enrol", label) }
+    function revoke(label: string): void { lab.act("revoke", label) }
     function setup(): void { lab.startSetup() }
     function ownershipProbe(): bool {
       var one = ownerComponent.createObject(window)
@@ -33,7 +35,7 @@ ShellRoot {
     function orientation(position: string): void { bar.position = position; bar.vertical = position === "left" || position === "right" }
     function expirePair(): void { lab.pairExpiresAt = Date.now() / 1000 - 1 }
     function inspect(): string {
-      return JSON.stringify({opened: lab.opened, ready: lab.ready, setupRunning: lab.setupRunning, nextStep: lab.nextStep, busy: lab.busy, mode: lab.mode, pairing: lab.pairing, pairingQr: lab.pairingQr, pairExpired: lab.pairExpired, pairFailed: lab.pairFailed, makingCode: lab.makingCode, qrName: lab.pairQrName, message: lab.feedbackText,
+      return JSON.stringify({opened: lab.opened, ready: lab.ready, setupRunning: lab.setupRunning, nextStep: lab.nextStep, busy: lab.busy, mode: lab.mode, pairing: lab.pairing, pairingQr: lab.pairingQr, pairExpired: lab.pairExpired, pairFailed: lab.pairFailed, makingCode: lab.makingCode, qrName: lab.pairQrName, pairedLabel: lab.pairedLabel, devices: (lab.state.devices || []).length, message: lab.feedbackText,
         codeCleared: lab.pairCode === "", qrCleared: lab.pairQr === "", stage: lab.setupStage, error: lab.messageError})
     }
     function capture(path: string): void {

@@ -214,7 +214,7 @@ def mapping_published(config, url, port):
 def status(binary, port):
     state = {"installed": bool(binary), "serviceState": "unknown", "healthy": False,
              "version": "", "url": "", "tailnetPublished": False, "error": "",
-             "pairedDevices": -1, "thisComputerPaired": False,
+             "pairedDevices": -1, "thisComputerPaired": False, "devices": [],
              **prerequisites()}
     # Identity is only needed while seeding a new config, not in UI or IPC snapshots.
     state.pop("trustedUser", None)
@@ -240,8 +240,11 @@ def status(binary, port):
         state["url"] = app_url(binary)
         try:
             devices = paired_devices(binary)
+            mine = this_computer(devices, read_local(), this_host())
             state["pairedDevices"] = len(devices)
-            state["thisComputerPaired"] = bool(this_computer(devices, read_local(), this_host()))
+            state["thisComputerPaired"] = bool(mine)
+            state["devices"] = [{"label": d[0][:48], "created": d[1], "lastSeen": d[2] if len(d) > 2 else None,
+                                 "thisComputer": d[0] == mine} for d in devices[:50]]
         except (OSError, ValueError, RuntimeError):
             pass
         serve = run(["tailscale", "serve", "status", "--json"])
@@ -484,7 +487,7 @@ def deploy(requested, port, mux):
 
 
 CODE_PATTERN = r"[A-Za-z0-9_-]{4,128}"
-DEVICE_LINE = re.compile(r"^(.+?)\s+created (\S+)\s+last seen \S+\s*$")
+DEVICE_LINE = re.compile(r"^(.+?)\s+created (\S+)\s+last seen (\S+)\s*$")
 
 
 def device_name(raw):
@@ -527,7 +530,8 @@ def paired_devices(binary):
     for line in clean(result.stdout).splitlines():
         match = DEVICE_LINE.match(line)
         if match:
-            devices.append((match[1].strip(), timestamp(match[2])))
+            # (label, created, last seen); a device never seen since pairing has no last-seen time.
+            devices.append((match[1].strip(), timestamp(match[2]), timestamp(match[3])))
     return devices
 
 
@@ -561,13 +565,13 @@ def write_local(data):
 
 def this_computer(devices, data, host):
     """The label this computer's browser was paired under, if it still holds one."""
-    labels = [label for label, _ in devices]
+    labels = [device[0] for device in devices]
     if data.get("label") in labels:
         return data["label"]
     start, end = data.get("mintedAt"), data.get("until")
     if isinstance(start, (int, float)) and isinstance(end, (int, float)):
         # A device enrolled while only the open-here code was pending is this browser.
-        for label, created in devices:
+        for label, created, *_ in devices:
             if created is not None and start - 5 <= created <= end + 5:
                 return label
     return next((label for label in labels if label.casefold() == host.casefold()), None)
@@ -596,6 +600,23 @@ def open_here(binary):
     write_local({"mintedAt": time.time(), "until": expires_at})
     launch_webapp(pair_url(base, code, host))
     return {"ok": True, "message": "Collie opened with the code filled in. Press Pair to finish."}
+
+
+def revoke(binary, label):
+    """Revoke one paired device by its exact label, as listed."""
+    devices = paired_devices(binary)
+    if label not in [device[0] for device in devices]:
+        raise RuntimeError("That device is no longer paired.")
+    if label.startswith("-"):
+        raise RuntimeError(f"Revoke it in a terminal: collie devices revoke '{label}'")
+    result = run([binary, "devices", "revoke", label, "--plain"], timeout=30)
+    if result.returncode:
+        raise RuntimeError(clean(result.stderr or result.stdout)[:500] or "Collie could not revoke that device.")
+    if read_local().get("label") == label:
+        write_local({})
+    left = len(devices) - 1
+    return {"ok": True, "message": f"Revoked {label}." + ("" if left else
+            " No device is paired now, so Collie no longer asks devices to pair.")}
 
 
 def action(binary, name, device=""):
@@ -628,6 +649,8 @@ def action(binary, name, device=""):
         return {"ok": result.returncode == 0, "message": output[:6000] or f"{name} finished."}
     if name == "open":
         return open_here(binary)
+    if name == "revoke":
+        return revoke(binary, device)
     url = app_url(binary)
     if name == "copy":
         result = run(["wl-copy", "--type", "text/plain"], input_text=url)
@@ -667,7 +690,7 @@ def install_requirement(name, mux, binary=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("status", "setup", "install-deps", "install-qr", "install-mux", "install-tools", "tailscale-setup", "start", "stop", "restart", "serve", "open", "copy", "qr", "pair", "pair-qr", "doctor"))
+    parser.add_argument("action", choices=("status", "setup", "install-deps", "install-qr", "install-mux", "install-tools", "tailscale-setup", "start", "stop", "restart", "serve", "open", "copy", "qr", "pair", "pair-qr", "revoke", "doctor"))
     parser.add_argument("--binary", default="collie")
     parser.add_argument("--port", type=int, default=8787)
     parser.add_argument("--mux", choices=("herdr", "tmux", "zellij"), default="herdr")
@@ -688,7 +711,7 @@ def main():
         else:
             if args.action == "status":
                 answer = status(binary, args.port)
-            elif args.action in ("start", "stop", "restart", "serve", "pair", "open"):
+            elif args.action in ("start", "stop", "restart", "serve", "pair", "open", "revoke"):
                 answer = locked_operation(lambda: action(binary, args.action, args.name))
             else:
                 answer = action(binary, args.action, args.name)

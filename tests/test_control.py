@@ -77,8 +77,9 @@ class ConnectionTests(unittest.TestCase):
         listing = "Iphone       created 2026-10-04T20:14:43.511Z  last seen 2026-10-06T15:12:53.157Z\nWork laptop  created 2026-10-05T08:00:00Z  last seen never\n"
         with patch.object(c, "run", return_value=result(listing)):
             devices = c.paired_devices("collie")
-        self.assertEqual([label for label, _ in devices], ["Iphone", "Work laptop"])
+        self.assertEqual([device[0] for device in devices], ["Iphone", "Work laptop"])
         self.assertAlmostEqual(devices[0][1], 1791144883.511, places=2)
+        self.assertIsNone(devices[1][2]) # never seen
         with patch.object(c, "run", return_value=result("no devices paired — pairing is not enforced\n")):
             self.assertEqual(c.paired_devices("collie"), [])
 
@@ -107,6 +108,23 @@ class ConnectionTests(unittest.TestCase):
         # The phone enrolled after its own code is not mistaken for this computer.
         self.assertIsNone(c.this_computer([("Iphone", 1300.0)], c.read_local(), "legion"))
         self.assertEqual(c.this_computer([("LEGION", 50.0)], {}, "legion"), "LEGION")
+
+    def test_revoke_runs_the_cli_for_a_listed_device_and_forgets_this_computer(self):
+        c.write_local({"label": "legion"})
+        with patch.object(c, "paired_devices", return_value=[("legion", 1.0, None), ("Iphone", 2.0, 3.0)]), patch.object(c, "run", return_value=result("revoked\n")) as run:
+            answer = c.action("collie", "revoke", "legion")
+        self.assertEqual(run.call_args.args[0], ["collie", "devices", "revoke", "legion", "--plain"])
+        self.assertEqual(answer["message"], "Revoked legion.")
+        self.assertEqual(c.read_local(), {})
+        with patch.object(c, "paired_devices", return_value=[("Iphone", 2.0, 3.0)]), patch.object(c, "run", return_value=result()):
+            self.assertIn("No device is paired", c.action("collie", "revoke", "Iphone")["message"])
+
+    def test_revoke_refuses_unknown_or_option_like_labels(self):
+        with patch.object(c, "paired_devices", return_value=[("-rf", 1.0, None)]), patch.object(c, "run") as run:
+            for label in ("ghost", "-rf"):
+                with self.subTest(label=label), self.assertRaises(RuntimeError):
+                    c.action("collie", "revoke", label)
+        run.assert_not_called()
 
     def test_pair_code_survives_missing_qr_tool(self):
         with patch.object(c, "run", return_value=result("ABC123\n")), patch.object(c, "app_url", return_value="https://host.ts.net"), patch.object(c, "qr_image", side_effect=RuntimeError("Install the QR tool.")):

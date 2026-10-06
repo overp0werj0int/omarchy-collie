@@ -40,6 +40,10 @@ Ui.Panel {
   property bool pairExpired: false
   property int pairRetries: 0
   property string pendingAction: ""
+  property string pendingName: ""
+  // The device that used the code on screen, once Collie lists it.
+  property string pairedLabel: ""
+  property string revokeArmed: ""
   property int statusFailures: 0
   property string pairCode: ""
   property string pairQr: ""
@@ -520,7 +524,7 @@ Ui.Panel {
   }
   // A code exists only while Full control is chosen; an expired one waits for "New code".
   function ensurePair() {
-    if (mode !== "control" || pairing || pairFailed || pairExpired) return
+    if (mode !== "control" || pairing || pairFailed || pairExpired || pairedLabel) return
     requestPair()
   }
   function requestPair() {
@@ -534,6 +538,7 @@ Ui.Panel {
   function newPair() {
     clearPair()
     pairError = ""
+    pairedLabel = ""
     pairRetries = 0
     pairFailed = false
     pairExpired = false
@@ -576,9 +581,17 @@ Ui.Panel {
     pairQrProc.command = commandFor("pair-qr", name)
     pairQrProc.running = true
   }
+  function seen(at) {
+    if (!at) return "not seen since pairing"
+    var ago = Math.max(0, Date.now() / 1000 - at)
+    if (ago < 90) return "seen just now"
+    if (ago < 3600) return "seen " + Math.round(ago / 60) + " min ago"
+    if (ago < 86400) return "seen " + Math.round(ago / 3600) + " h ago"
+    return "seen " + new Date(at * 1000).toLocaleDateString(Qt.locale(), "MMM d")
+  }
   function chooseMode(value) {
     mode = mode === value ? "" : value
-    if (mode === "control") ensurePair()
+    if (mode === "control") { pairedLabel = ""; ensurePair() }
     else if (mode === "watch") loadQr(false)
   }
   function focusDefault() {
@@ -588,7 +601,8 @@ Ui.Panel {
   }
   // Esc leaves the innermost thing first: the name field, then the chosen way in, then the panel.
   function goBack() {
-    if (nameField.activeFocus) modePicker.forceActiveFocus()
+    if (revokeArmed) revokeArmed = ""
+    else if (nameField.activeFocus) modePicker.forceActiveFocus()
     else if (mode !== "") { mode = ""; if (ready) modePicker.forceActiveFocus() }
     else close()
   }
@@ -614,6 +628,18 @@ Ui.Panel {
       qr = ""
       qrUrl = ""
       if (pairBaseUrl !== answer.url || !answer.healthy || !answer.tailnetPublished) clearPair()
+    }
+    // A device enrolled after this code was made used it: show that, the code is spent.
+    if (pairing && Array.isArray(answer.devices)) {
+      var known = (state.devices || []).map(function(d) { return d.label })
+      for (var i = 0; i < answer.devices.length; i++) {
+        var d = answer.devices[i]
+        if (known.indexOf(d.label) < 0 && Number(d.created) >= pairIssuedAt - 5) {
+          clearPair()
+          pairedLabel = String(d.label)
+          break
+        }
+      }
     }
     state = answer
     checked = true
@@ -679,12 +705,13 @@ Ui.Panel {
     "serve": "Publishing to your tailnet…",
     "doctor": "Running diagnostics…",
     "open": "Opening Collie…",
-    "copy": "Copying the address…"
+    "copy": "Copying the address…",
+    "revoke": "Revoking…"
   })
-  function act(action) {
+  function act(action, name) {
     if (busy) return
     // Pairing holds the backend lock for a moment; run the action right after it.
-    if (pairProc.running) { pendingAction = action; return }
+    if (pairProc.running) { pendingAction = action; pendingName = name || ""; return }
     if (action === "setup") setupStage = 0
     if (action !== "doctor") showDetails = false
     quietMessage.stop()
@@ -698,7 +725,7 @@ Ui.Panel {
     actionAnswered = false
     message = actionMessages[action] || "Working…"
     messageError = false
-    actionProc.command = commandFor(action)
+    actionProc.command = commandFor(action, name)
     actionProc.running = true
   }
   function receiveAction(line) {
@@ -756,6 +783,8 @@ Ui.Panel {
       pairRetries = 0
       pairFailed = false
       pairExpired = false
+      pairedLabel = ""
+      revokeArmed = ""
       refresh()
       Qt.callLater(function() { scroll.contentY = 0; root.focusDefault() })
     } else {
@@ -818,6 +847,11 @@ Ui.Panel {
     onTriggered: if (!root.busy && !root.messageError) root.message = ""
   }
   Timer {
+    id: revokeDisarm
+    interval: 4000
+    onTriggered: root.revokeArmed = ""
+  }
+  Timer {
     // Redraw once typing settles, not on every key.
     id: nameSettle
     interval: 450
@@ -834,7 +868,8 @@ Ui.Panel {
     onTriggered: root.copied = false
   }
   Timer {
-    interval: root.pollSeconds * 1000
+    // While a code is on screen, check often so a new device shows up as soon as it pairs.
+    interval: root.pairing ? 3000 : root.pollSeconds * 1000
     running: !root.awaitingTailscale
     repeat: true
     onTriggered: root.refresh()
@@ -912,9 +947,10 @@ Ui.Panel {
     onRunningChanged: if (running) identity = root.requestIdentity
     onExited: {
       if (!root.pendingAction) return
-      var queued = root.pendingAction
+      var queued = root.pendingAction, queuedName = root.pendingName
       root.pendingAction = ""
-      Qt.callLater(function() { root.act(queued) })
+      root.pendingName = ""
+      Qt.callLater(function() { root.act(queued, queuedName) })
     }
     stdout: StdioCollector { onStreamFinished: root.receivePair(text) }
   }
@@ -1242,9 +1278,11 @@ Ui.Panel {
                 label: "QR code that opens Collie with your pairing code filled in"
                 spinning: pairProc.running
                 emptyTitle: !root.state.qrAvailable ? "QR codes need qrencode"
+                  : root.pairedLabel ? "󰄬 Paired"
                   : root.pairExpired ? "Code expired"
                   : root.pairFailed ? "Could not make a code" : ""
                 emptyDetail: !root.state.qrAvailable ? "Codes are drawn on this computer."
+                  : root.pairedLabel ? root.pairedLabel + " has full control now."
                   : root.pairExpired ? "Make a new one when your phone is ready."
                   : root.pairFailed ? (root.pairError || "Try a new code, or run diagnostics.")
                   : pairProc.running ? "Making your code…" : ""
@@ -1257,17 +1295,28 @@ Ui.Panel {
                 }
               }
               Item {
+                id: controlSide
                 width: parent.width - controlQr.width - parent.spacing
                 height: controlQr.height
+                // Timer and code share one size: the largest at which the code still fits the column.
+                readonly property int bigSize: Math.max(Style.font.title, Math.min(Math.round(Style.font.display * 1.2),
+                  Math.floor(width * 100 / Math.max(1, codeMetrics.advanceWidth))))
+                TextMetrics {
+                  id: codeMetrics
+                  font.family: root.fontFamily
+                  font.bold: true
+                  font.pixelSize: 100
+                  text: root.pairCode.length > 8 ? root.pairCode : "WWWWWWWW"
+                }
                 Column {
                   width: parent.width
-                  spacing: Style.space(3)
+                  spacing: Style.space(4)
                   Text {
                     text: root.pairing ? root.timerText : root.pairExpired ? "0:00" : "–:––"
                     color: root.pairExpired || root.pairing && root.pairSeconds <= 60 ? Color.urgent
                       : root.pairing ? root.foreground : root.dim
                     font.family: root.fontFamily
-                    font.pixelSize: Math.round(Style.font.display * 1.5)
+                    font.pixelSize: controlSide.bigSize
                     font.bold: true
                     Accessible.role: Accessible.StaticText
                     Accessible.name: root.pairing ? "Code expires in " + root.timerText : "No code"
@@ -1286,11 +1335,15 @@ Ui.Panel {
                       width: parent.width * Math.max(0, Math.min(1, root.pairSeconds / Math.max(1, root.pairExpiresAt - root.pairIssuedAt)))
                     }
                   }
-                  Caption {
-                    topPadding: Style.space(2)
-                    font.pixelSize: Style.font.caption
-                    text: root.pairing ? "Code " + root.pairCode
-                      : root.pairExpired ? "The code ran out." : pairProc.running ? "Making your code…" : " "
+                  Text {
+                    width: parent.width
+                    text: root.pairing ? root.pairCode : " "
+                    color: root.foreground
+                    font.family: root.fontFamily
+                    font.pixelSize: controlSide.bigSize
+                    font.bold: true
+                    Accessible.role: Accessible.StaticText
+                    Accessible.name: root.pairing ? "Pairing code " + root.pairCode.split("").join(" ") : ""
                   }
                 }
                 Column {
@@ -1345,6 +1398,78 @@ Ui.Panel {
               enabled: !root.busy
               opacity: enabled ? 1 : 0.4
               onClicked: root.act("open")
+            }
+          }
+
+          Rule { visible: devicesView.visible }
+
+          // Paired devices: what holds full control, and a way to take it back.
+          Column {
+            id: devicesView
+            width: parent.width
+            spacing: Style.space(8)
+            visible: root.ready && root.state.pairedDevices >= 0
+            Section { text: "PAIRED DEVICES"; Accessible.name: "Paired devices" }
+            Caption {
+              visible: !(root.state.devices || []).length
+              text: "None yet, so Collie lets any device type. Full control pairs one."
+            }
+            Repeater {
+              model: root.state.devices || []
+              Item {
+                id: deviceRow
+                required property var modelData
+                readonly property bool armed: root.revokeArmed === modelData.label
+                width: devicesView.width
+                implicitHeight: Math.max(deviceText.implicitHeight, revokeButton.implicitHeight)
+                Accessible.role: Accessible.ListItem
+                Accessible.name: modelData.label + ". " + deviceDetail.text
+                Text {
+                  anchors.verticalCenter: parent.verticalCenter
+                  width: Style.space(20)
+                  horizontalAlignment: Text.AlignHCenter
+                  text: deviceRow.modelData.thisComputer ? "󰍹" : "󰄜"
+                  color: root.dim
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.title
+                  Accessible.ignored: true
+                }
+                Column {
+                  id: deviceText
+                  anchors.left: parent.left
+                  anchors.leftMargin: Style.space(30)
+                  anchors.right: revokeButton.left
+                  anchors.rightMargin: Style.space(8)
+                  anchors.verticalCenter: parent.verticalCenter
+                  spacing: Style.space(1)
+                  LabText { text: deviceRow.modelData.label; elide: Text.ElideRight; wrapMode: Text.NoWrap }
+                  Caption {
+                    id: deviceDetail
+                    font.pixelSize: Style.font.caption
+                    color: deviceRow.armed ? Color.urgent : root.dim
+                    text: deviceRow.armed
+                      ? ((root.state.devices || []).length === 1 ? "Press again. With none paired, any device can type."
+                        : deviceRow.modelData.thisComputer ? "Press again. Opening here will pair it again."
+                        : "Press again to take away its full control.")
+                      : (deviceRow.modelData.thisComputer ? "This computer, " : "") + root.seen(deviceRow.modelData.lastSeen)
+                  }
+                }
+                LabButton {
+                  id: revokeButton
+                  anchors.right: parent.right
+                  anchors.verticalCenter: parent.verticalCenter
+                  text: deviceRow.armed ? "Revoke?" : "Revoke"
+                  bordered: deviceRow.armed
+                  foreground: deviceRow.armed ? Color.urgent : root.foreground
+                  enabled: !root.busy
+                  Accessible.name: "Revoke " + deviceRow.modelData.label
+                  onClicked: {
+                    // Destructive: the first press asks in place, the second within a few seconds revokes.
+                    if (deviceRow.armed) { root.revokeArmed = ""; root.act("revoke", deviceRow.modelData.label) }
+                    else { root.revokeArmed = deviceRow.modelData.label; revokeDisarm.restart() }
+                  }
+                }
+              }
             }
           }
 

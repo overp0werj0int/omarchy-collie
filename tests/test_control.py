@@ -126,6 +126,19 @@ class ConnectionTests(unittest.TestCase):
                     c.action("collie", "revoke", label)
         run.assert_not_called()
 
+    def test_diagnostics_open_in_omarchys_floating_terminal(self):
+        with patch.object(c.shutil, "which", return_value="/usr/bin/omarchy-launch-floating-terminal-with-presentation"), patch.object(c.subprocess, "Popen") as popen, patch.object(c, "run") as run:
+            answer = c.action("/opt/my collie/bin/collie", "doctor")
+        argv = popen.call_args.args[0]
+        self.assertEqual(argv[0], "omarchy-launch-floating-terminal-with-presentation")
+        self.assertTrue(argv[1].startswith("bash ") and argv[1].endswith(" '/opt/my collie/bin/collie'"), argv)
+        self.assertIn("doctor.sh", argv[1])
+        self.assertTrue(answer["ok"])
+        run.assert_not_called()
+        # Without Omarchy's launcher the report comes back as text, as before.
+        with patch.object(c.shutil, "which", return_value=None), patch.object(c, "run", return_value=result("all good")):
+            self.assertEqual(c.action("collie", "doctor")["message"], "all good")
+
     def test_pair_code_survives_missing_qr_tool(self):
         with patch.object(c, "run", return_value=result("ABC123\n")), patch.object(c, "app_url", return_value="https://host.ts.net"), patch.object(c, "qr_image", side_effect=RuntimeError("Install the QR tool.")):
             answer = c.action("collie", "pair")

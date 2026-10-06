@@ -12,6 +12,7 @@ import platform
 from pathlib import Path
 import re
 import selectors
+import shlex
 import signal
 import stat
 import shutil
@@ -643,6 +644,13 @@ def action(binary, name, device=""):
         if not re.fullmatch(CODE_PATTERN, code):
             raise RuntimeError("No pairing code to draw. Make a new code.")
         return {"ok": True, "qr": qr_image(pair_url(app_url(binary), code, device_name(device)))}
+    if name == "doctor" and shutil.which("omarchy-launch-floating-terminal-with-presentation"):
+        # Like Omarchy's own updates: a centered terminal with the full report, closed by the user.
+        script = Path(__file__).with_name("doctor.sh")
+        subprocess.Popen(["omarchy-launch-floating-terminal-with-presentation",
+                          "bash " + shlex.quote(str(script)) + " " + shlex.quote(binary)],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        return {"ok": True, "terminal": True, "message": "Opened diagnostics in a terminal."}
     if name in ("start", "stop", "restart", "serve", "doctor"):
         result = run([binary, name, "--plain"], timeout=60)
         output = clean(result.stdout + "\n" + result.stderr)

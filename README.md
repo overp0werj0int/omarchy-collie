@@ -65,11 +65,11 @@ Stopping Collie pauses remote access and leaves its owned proxy configured. Herd
 | `n` | New pairing code (Full control) |
 | `c` | Copy the watch-only link |
 | `o` | Open Collie on this computer (closes the panel) |
-| `s` / `r` / `d` | Start or stop / restart / diagnostics |
+| `s` / `r` / `d` | Start or stop / restart / diagnostics in a terminal |
 | Tab / Shift+Tab | Move between controls; h/l or arrows move within a choice |
 | Escape | Leave the name field, then the chosen way in, then close the panel |
 
-The footer shows the keys that apply to the current view. The layout uses your Omarchy palette, typography and panel components (hero, section headers, separators, switch), fits horizontal and vertical bars, and scrolls only on small displays. Success messages fade after a few seconds. Only a failed action you started shows in red, with **Try again**, **Show details** and **Diagnostics**; it clears when the panel closes. Background issues (a missed status poll, a pairing code that could not be made) never show as errors. The bar dot uses the accent when ready, the urgent colour when the bridge is online but unpublished, and is hidden before Collie is installed.
+The footer shows the keys that apply to the current view. The layout uses your Omarchy palette, typography and panel components (hero, section headers, separators, switch), fits horizontal and vertical bars, and scrolls only on small displays. Success messages fade after a few seconds. Only a failed action you started shows in red, with **Try again**, **Show details** and **Diagnostics**; it clears when the panel closes. Background issues (a missed status poll, a pairing code that could not be made) never show as errors. **Diagnostics** (`d`) opens `collie doctor` the way Omarchy runs its updates: a centered floating terminal (`omarchy-launch-floating-terminal-with-presentation`) with the full report, ending in **Close diagnostics?**; **Keep open** leaves it until you press a key. Without that launcher the report shows in the panel. The bar dot uses the accent when ready, the urgent colour when the bridge is online but unpublished, and is hidden before Collie is installed.
 
 ## Widget settings
 
@@ -89,7 +89,7 @@ Executable lookup falls back to `~/.local/bin/collie` and `~/.local/share/collie
 omarchy plugin validate .
 python3 -m unittest discover -s tests -v
 python3 scripts/control.py status
-python3 scripts/control.py doctor
+python3 scripts/control.py doctor   # opens the diagnostics terminal
 omabox run --net isolated -- python3 tests/verify_ui.py
 ./demo/run ready
 ```

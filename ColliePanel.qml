@@ -703,7 +703,7 @@ Ui.Panel {
     "stop": "Stopping the bridge…",
     "restart": "Restarting the bridge…",
     "serve": "Publishing to your tailnet…",
-    "doctor": "Running diagnostics…",
+    "doctor": "Opening diagnostics…",
     "open": "Opening Collie…",
     "copy": "Copying the address…",
     "revoke": "Revoking…"
@@ -746,6 +746,9 @@ Ui.Panel {
       if (!messageError) {
         if (currentAction === "copy") { copied = true; copiedReset.restart(); message = "" }
         else if (currentAction === "open") { message = ""; root.close() }
+        // The report is in Omarchy's floating terminal; the panel gets out of its way.
+        else if (currentAction === "doctor" && answer.terminal) { message = ""; root.close() }
+        else if (currentAction === "doctor") showDetails = true
         else if (currentAction === "setup") setupStage = 5
         // Success is normally true: let it fade instead of staying on screen.
         if (currentAction !== "doctor" && message) quietMessage.restart()
@@ -770,7 +773,7 @@ Ui.Panel {
     else if (t === "c" && mode === "watch" && ready) act("copy")
     else if (t === "s" && state.installed) act(state.healthy ? "stop" : "start")
     else if (t === "r" && state.installed) act("restart")
-    else if (t === "d" && state.installed) { showDetails = true; act("doctor") }
+    else if (t === "d" && state.installed) act("doctor")
     else return false
     return true
   }
@@ -834,7 +837,7 @@ Ui.Panel {
     function copyUrl(): void { root.ipcAct("copy") }
     function pairDevice(): void { root.open(); root.newPair() }
     function publish(): void { root.ipcAct("serve") }
-    function diagnostics(): void { root.showDetails = true; root.ipcAct("doctor") }
+    function diagnostics(): void { root.ipcAct("doctor") }
   }
   Timer {
     id: revealFeedback
@@ -1143,7 +1146,7 @@ Ui.Panel {
               LabButton {
                 visible: root.feedbackError && root.state.installed && root.currentAction !== "doctor"
                 text: "Diagnostics"; bordered: false
-                onClicked: { root.showDetails = true; root.act("doctor") }
+                onClicked: root.act("doctor")
               }
             }
             LabButton {
@@ -1504,7 +1507,7 @@ Ui.Panel {
                 onClicked: root.act("serve")
               }
               LabButton { text: "Restart"; bordered: false; tooltipText: "r"; enabled: !root.busy; onClicked: root.act("restart") }
-              LabButton { text: "Diagnostics"; bordered: false; tooltipText: "d"; enabled: !root.busy; onClicked: { root.showDetails = true; root.act("doctor") } }
+              LabButton { text: "Diagnostics"; bordered: false; tooltipText: "d"; enabled: !root.busy; onClicked: root.act("doctor") }
             }
           }
 

@@ -350,8 +350,11 @@ def locked_operation(callback):
         os.close(directory)
     with os.fdopen(fd, "r+") as lock:
         info = os.fstat(lock.fileno())
-        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
-            raise RuntimeError("The operation lock must be a private regular file owned by you.")
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
+            raise RuntimeError("The operation lock must be a regular file owned by you.")
+        if info.st_mode & 0o077:
+            # Earlier versions left it readable; inside this private directory, tighten it in place.
+            os.fchmod(lock.fileno(), 0o600)
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:

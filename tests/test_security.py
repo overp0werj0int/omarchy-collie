@@ -88,6 +88,14 @@ c.run([sys.executable,"-c","import pathlib,time; pathlib.Path("+repr(sys.argv[2]
             with self.subTest(code=code), patch.dict(os.environ,{'COLLIE_LAB_PAIR_CODE':code}):
                 with self.assertRaises(RuntimeError): c.action('collie','pair-qr')
 
+    def test_readable_lock_from_an_older_version_is_tightened_not_refused(self):
+        with tempfile.TemporaryDirectory() as folder:
+            (Path(folder)/'collie-lab').mkdir(mode=0o700)
+            lock=Path(folder)/'collie-lab/setup.lock'; lock.touch(); lock.chmod(0o644)
+            with patch.dict(os.environ,{'XDG_RUNTIME_DIR':folder}):
+                self.assertEqual(c.locked_operation(lambda:'ran'),'ran')
+            self.assertEqual(lock.stat().st_mode & 0o777, 0o600)
+
     def test_symlink_directory_and_lock_are_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder); (root/'actual').mkdir(); (root/'link').symlink_to(root/'actual')

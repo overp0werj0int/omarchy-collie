@@ -36,6 +36,7 @@ Ui.Panel {
   property string mode: ""
   property string deviceName: ""
   property bool pairFailed: false
+  property string pairError: ""
   property bool pairExpired: false
   property int pairRetries: 0
   property string pendingAction: ""
@@ -411,6 +412,8 @@ Ui.Panel {
         horizontalAlignment: Text.AlignHCenter
         font.pixelSize: Style.font.caption
         text: box.emptyDetail
+        maximumLineCount: 6
+        elide: Text.ElideRight
       }
     }
   }
@@ -530,6 +533,7 @@ Ui.Panel {
   }
   function newPair() {
     clearPair()
+    pairError = ""
     pairRetries = 0
     pairFailed = false
     pairExpired = false
@@ -554,7 +558,11 @@ Ui.Panel {
         pairExpired = false
         // The name changed while the code was being made: draw it in.
         if (deviceName.trim() !== pairQrName) nameSettle.restart()
-      } else pairMissed()
+      } else {
+        // The helper's messages never carry the code: say why, instead of a bare failure.
+        pairError = String(answer.message || "")
+        pairMissed()
+      }
     } catch (error) { pairMissed() }
   }
   // Same code, new name: only the picture changes, the countdown keeps running.
@@ -1238,7 +1246,7 @@ Ui.Panel {
                   : root.pairFailed ? "Could not make a code" : ""
                 emptyDetail: !root.state.qrAvailable ? "Codes are drawn on this computer."
                   : root.pairExpired ? "Make a new one when your phone is ready."
-                  : root.pairFailed ? "Try a new code, or run diagnostics."
+                  : root.pairFailed ? (root.pairError || "Try a new code, or run diagnostics.")
                   : pairProc.running ? "Making your code…" : ""
                 LabButton {
                   anchors.horizontalCenter: parent.horizontalCenter

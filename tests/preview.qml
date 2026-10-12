@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import "Collie"
 import "Collie/IpcOwner.js" as IpcOwner
 
@@ -70,13 +71,13 @@ ShellRoot {
     anchors { top: true; right: true }
     implicitWidth: 70
     implicitHeight: 48
-    color: Color.background
+    color: Commons.Color.background
     QtObject {
       id: bar
       property string position: "top"
-      property color foreground: Color.foreground
-      property color barForeground: Color.foreground
-      property color urgent: Color.urgent
+      property color foreground: Commons.Color.foreground
+      property color barForeground: Commons.Color.foreground
+      property color urgent: Commons.Color.urgent
       property string fontFamily: Style.font.family
       property int barSize: 48
       property bool vertical: false

@@ -3,6 +3,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui as Ui
 import "IpcOwner.js" as IpcOwner
 
@@ -82,7 +83,7 @@ Ui.Panel {
   readonly property bool writesGated: state.pairedDevices !== 0
   readonly property bool canOpenHere: state.healthy && !!state.url
   readonly property string helper: Qt.resolvedUrl("scripts/control.py").toString().replace(/^file:\/\//, "")
-  readonly property color foreground: bar ? bar.foreground : Color.foreground
+  readonly property color foreground: bar ? bar.foreground : Commons.Color.foreground
   readonly property color dim: Qt.alpha(foreground, 0.62)
   readonly property color outline: Qt.alpha(foreground, 0.12)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
@@ -158,7 +159,7 @@ Ui.Panel {
   }
   component Primary: LabButton {
     width: parent.width
-    foreground: Color.accent
+    foreground: Commons.Color.accent
     selected: true
     fontSize: Style.font.body
   }
@@ -248,12 +249,12 @@ Ui.Panel {
     // Drawn here rather than from control tokens: some themes give controls no border at rest
     // or in focus, and a tile must read as pressable and show the keyboard cursor in every theme.
     readonly property bool cursorOn: hasCursor || focusable && activeFocus
-    color: tileMouse.pressed ? Style.pressedFillFor(root.foreground, Color.accent)
-      : selected ? Style.selectedFillFor(root.foreground, Color.accent)
-      : hot ? Style.hoverFillFor(root.foreground, Color.accent)
+    color: tileMouse.pressed ? Style.pressedFillFor(root.foreground, Commons.Color.accent)
+      : selected ? Style.selectedFillFor(root.foreground, Commons.Color.accent)
+      : hot ? Style.hoverFillFor(root.foreground, Commons.Color.accent)
       : Qt.alpha(root.foreground, 0.04)
-    borderSpec: cursorOn ? Border.flat(Color.accent, 2)
-      : selected ? Border.flat(Color.accent, 1)
+    borderSpec: cursorOn ? Border.flat(Commons.Color.accent, 2)
+      : selected ? Border.flat(Commons.Color.accent, 1)
       : Border.flat(Qt.alpha(root.foreground, hot ? 0.24 : 0.1), 1)
     Behavior on color { ColorAnimation { duration: 120 } }
     Column {
@@ -266,7 +267,7 @@ Ui.Panel {
         spacing: Style.space(7)
         Text {
           text: tile.icon
-          color: tile.selected ? Color.accent : root.foreground
+          color: tile.selected ? Commons.Color.accent : root.foreground
           font.family: root.fontFamily
           font.pixelSize: Style.font.title
           anchors.verticalCenter: parent.verticalCenter
@@ -288,7 +289,7 @@ Ui.Panel {
       anchors.margins: Style.space(9)
       visible: tile.selected
       text: "󰄬"
-      color: Color.accent
+      color: Commons.Color.accent
       font.family: root.fontFamily
       font.pixelSize: Style.font.body
       Accessible.ignored: true
@@ -439,7 +440,7 @@ Ui.Panel {
       width: Style.space(20)
       horizontalAlignment: Text.AlignHCenter
       text: stepRow.active ? "󰑐" : stepRow.done ? "󰄬" : stepRow.failed ? "󰀦" : "󰝦"
-      color: stepRow.failed ? Color.urgent : stepRow.done || stepRow.active ? Color.accent : Qt.alpha(root.foreground, 0.35)
+      color: stepRow.failed ? Commons.Color.urgent : stepRow.done || stepRow.active ? Commons.Color.accent : Qt.alpha(root.foreground, 0.35)
       font.family: root.fontFamily
       font.pixelSize: Style.font.body
       RotationAnimator on rotation {
@@ -462,7 +463,7 @@ Ui.Panel {
       Caption {
         text: stepRow.active && root.busy && root.message ? root.message + root.elapsedText
           : stepRow.failed ? "Did not finish. The reason is shown above." : stepRow.detail
-        color: stepRow.failed ? Color.urgent : root.dim
+        color: stepRow.failed ? Commons.Color.urgent : root.dim
       }
     }
   }
@@ -1015,7 +1016,7 @@ Ui.Panel {
           height: width
           radius: width / 2
           visible: root.checked && (root.state.installed || root.busy)
-          color: root.busy ? root.barForeground : root.ready ? Color.accent : root.state.healthy ? Color.urgent : root.dim
+          color: root.busy ? root.barForeground : root.ready ? Commons.Color.accent : root.state.healthy ? Commons.Color.urgent : root.dim
         }
       }
     }
@@ -1044,7 +1045,7 @@ Ui.Panel {
         if (event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) return
         if (event.text && event.text.length === 1 && root.shortcut(event.text)) event.accepted = true
       }
-      Rectangle { anchors.fill: parent; color: Color.popups.background }
+      Rectangle { anchors.fill: parent; color: Commons.Color.popups.background }
       Flickable {
         id: scroll
         anchors.fill: parent
@@ -1071,7 +1072,7 @@ Ui.Panel {
             iconComponent: Component {
               Text {
                 text: "󰩃"
-                color: root.ready ? Color.accent : root.foreground
+                color: root.ready ? Commons.Color.accent : root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.display
               }
@@ -1126,7 +1127,7 @@ Ui.Panel {
               Caption {
                 width: parent.width - (busyGlyph.visible ? busyGlyph.width + parent.spacing : 0)
                 text: root.feedbackText + root.elapsedText
-                color: root.feedbackError ? Color.urgent : root.dim
+                color: root.feedbackError ? Commons.Color.urgent : root.dim
                 maximumLineCount: root.showDetails ? 400 : 3
                 elide: Text.ElideRight
                 wrapMode: Text.WrapAtWordBoundaryOrAnywhere
@@ -1316,7 +1317,7 @@ Ui.Panel {
                   spacing: Style.space(4)
                   Text {
                     text: root.pairing ? root.timerText : root.pairExpired ? "0:00" : "–:––"
-                    color: root.pairExpired || root.pairing && root.pairSeconds <= 60 ? Color.urgent
+                    color: root.pairExpired || root.pairing && root.pairSeconds <= 60 ? Commons.Color.urgent
                       : root.pairing ? root.foreground : root.dim
                     font.family: root.fontFamily
                     font.pixelSize: controlSide.bigSize
@@ -1334,7 +1335,7 @@ Ui.Panel {
                       visible: root.pairing
                       height: parent.height
                       radius: parent.radius
-                      color: root.pairSeconds <= 60 ? Color.urgent : Color.accent
+                      color: root.pairSeconds <= 60 ? Commons.Color.urgent : Commons.Color.accent
                       width: parent.width * Math.max(0, Math.min(1, root.pairSeconds / Math.max(1, root.pairExpiresAt - root.pairIssuedAt)))
                     }
                   }
@@ -1449,7 +1450,7 @@ Ui.Panel {
                   Caption {
                     id: deviceDetail
                     font.pixelSize: Style.font.caption
-                    color: deviceRow.armed ? Color.urgent : root.dim
+                    color: deviceRow.armed ? Commons.Color.urgent : root.dim
                     text: deviceRow.armed
                       ? ((root.state.devices || []).length === 1 ? "Press again. With none paired, any device can type."
                         : deviceRow.modelData.thisComputer ? "Press again. Opening here will pair it again."
@@ -1463,7 +1464,7 @@ Ui.Panel {
                   anchors.verticalCenter: parent.verticalCenter
                   text: deviceRow.armed ? "Revoke?" : "Revoke"
                   bordered: deviceRow.armed
-                  foreground: deviceRow.armed ? Color.urgent : root.foreground
+                  foreground: deviceRow.armed ? Commons.Color.urgent : root.foreground
                   enabled: !root.busy
                   Accessible.name: "Revoke " + deviceRow.modelData.label
                   onClicked: {
